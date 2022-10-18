@@ -1,11 +1,9 @@
 package com.oguzcan.paketlerdemo.entities;
 
-import lombok.Data;
 
 import javax.persistence.*;
-import java.util.Date;
+import java.time.ZonedDateTime;
 
-@Data
 @Entity
 @Table(name = "purchase_histories")
 public class PurchaseHistory {
@@ -13,7 +11,39 @@ public class PurchaseHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long purchaseId;
-    private Long userID;
+    private Long userId;
     private Long packetId;
-    private Date purchaseDate;
+    private ZonedDateTime purchaseDate;
+
+    public Long getPurchaseId() {
+        return purchaseId;
+    }
+
+    public void setPurchaseId(Long purchaseId) {
+        this.purchaseId = purchaseId;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public Long getPacketId() {
+        return packetId;
+    }
+
+    public void setPacketId(Long packetId) {
+        this.packetId = packetId;
+    }
+
+    public ZonedDateTime getPurchaseDate() {
+        return purchaseDate;
+    }
+
+    public void setPurchaseDate(ZonedDateTime purchaseDate) {
+        this.purchaseDate = purchaseDate;
+    }
 }

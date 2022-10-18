@@ -1,7 +1,6 @@
 package com.oguzcan.paketlerdemo.core.utilities.results;
 
 public class Result {
-
     private boolean success;
     private String message;
 

@@ -1,98 +1,122 @@
 package com.oguzcan.paketlerdemo.services.admin.impl;
 
 import com.oguzcan.paketlerdemo.core.utilities.results.*;
+import com.oguzcan.paketlerdemo.dto.AdminDto;
+import com.oguzcan.paketlerdemo.dto.CustomerDto;
 import com.oguzcan.paketlerdemo.dto.PacketDto;
-import com.oguzcan.paketlerdemo.dto.UserDto;
-import com.oguzcan.paketlerdemo.entities.Packet;
-import com.oguzcan.paketlerdemo.entities.User;
+import com.oguzcan.paketlerdemo.entities.*;
+import com.oguzcan.paketlerdemo.repository.AdminRepository;
+import com.oguzcan.paketlerdemo.repository.CustomerRepository;
 import com.oguzcan.paketlerdemo.repository.PacketRepository;
 import com.oguzcan.paketlerdemo.repository.PurchaseHistoryRepository;
-import com.oguzcan.paketlerdemo.repository.UserRepository;
 import com.oguzcan.paketlerdemo.services.admin.AdminService;
-import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
 
-    private final   UserRepository userRepository;
+    private final AdminRepository adminRepository;
+    private final CustomerRepository customerRepository;
     private final PacketRepository packetRepository;
     private final PurchaseHistoryRepository purchaseHistoryRepository;
-
     private final ModelMapper modelMapper;
 
+    public AdminServiceImpl(AdminRepository adminRepository, CustomerRepository customerRepository, PacketRepository packetRepository, PurchaseHistoryRepository purchaseHistoryRepository, ModelMapper modelMapper) {
+        this.adminRepository = adminRepository;
+        this.customerRepository = customerRepository;
+        this.packetRepository = packetRepository;
+        this.purchaseHistoryRepository = purchaseHistoryRepository;
+        this.modelMapper = modelMapper;
+    }
 
+    // ADMIN ############################################################################################################
+
+    public Result addAdmin(AdminDto adminDto) {
+        Admin admin = modelMapper.map(adminDto, Admin.class);
+        adminRepository.save(admin);
+        return new SuccessResult("Admin başarıyla oluşturuldu.");
+    }
 
 
     // USER ############################################################################################################
     @Override
-    public Result addUser(UserDto userDto) {
-        User user = modelMapper.map(userDto, User.class);
-        user.setCreateAt(new Date());
-        userRepository.save(user);
-        return new SuccessResult("Kullanıcı basarıyla olusturuldu.");
+    public Result addCustomer(CustomerDto customerDto) {
+        Customer customer = modelMapper.map(customerDto, Customer.class);
+        PersonalInformation personalInformation = modelMapper.map(customerDto, PersonalInformation.class);
+        customer.setCreateAt(ZonedDateTime.now());
+        customer.setPersonalInformation(personalInformation);
+        customer.setPacketBalance(new PacketBalance());
+
+            System.out.println(customerDto);
+            System.out.println(customer);
+
+        customerRepository.save(customer);
+        return new SuccessResult("Müşteri başarıyla oluşturuldu.");
     }
 
     @Override
-    public DataResult<UserDto> getUser(Long userId) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isPresent()) {
-            UserDto dto = modelMapper.map(user, UserDto.class);
-            return new SuccessDataResult<UserDto>(dto, "Kullanıcı getirildi.");
+    public DataResult<CustomerDto> getCustomer(Long userId) {
+        Optional<Customer> customer = this.customerRepository
+                .findById(userId);
+
+        if (customer.isPresent()) {
+            CustomerDto customerDto = modelMapper.map(customer, CustomerDto.class);
+//            customerDto.setFirstname(customer.get().getPersonalInformation().getFirstname());
+
+            return new SuccessDataResult<CustomerDto>(customerDto, "Müşteri getirildi.");
         }
-
-        return new ErrorDataResult<UserDto>("Kullanıcı bulunamadı.");
+        return new ErrorDataResult<CustomerDto>("Müşteri bulunamadı.");
     }
 
     @Override
-    public DataResult<List<UserDto>> getUsers() {
-        List<User> users = userRepository.findAll();
-        List<UserDto> dtos = users.stream()
-                .map(user -> modelMapper.map(user, UserDto.class))
+    public DataResult<List<CustomerDto>> getCustomers() {
+        List<Customer> customers = customerRepository.findAll();
+        List<CustomerDto> customerDtos = customers.stream()
+                .map(customer -> modelMapper.map(customer, CustomerDto.class))
                 .collect(Collectors.toList());
-        return new SuccessDataResult<List<UserDto>>
-                (dtos, "kullanıcılar getirildi.");
+        return new SuccessDataResult<List<CustomerDto>>
+                (customerDtos, "Tüm müşteriler getirildi.");
     }
 
     @Override
-    public Result updateUser(UserDto userDto) {
-        Optional<User> user = userRepository.findById(userDto.getUserId());
-        if (user.isPresent()) {
-            User updatedUser = user.get();
-            updatedUser = modelMapper.map(userDto, User.class);
-            updatedUser.setUpdateAt(new Date());
-            userRepository.save(updatedUser);
-            return new SuccessResult("Kullanıcı başarıyla güncellendi.");
-        }
-        return new ErrorResult("Kullanıcı güncellemesi başarısız.");
+    public Result updateCustomer(CustomerDto customerDto) {
+        Optional<Customer> customer = this.customerRepository
+                .findById(customerDto.getUserId());
+
+        if (customer.isPresent()) {
+            Customer updatedCustomer = customer.get();
+            updatedCustomer = modelMapper.map(customerDto, Customer.class);
+            updatedCustomer.setUpdateAt(ZonedDateTime.now());
+            customerRepository.save(updatedCustomer);
+            return new SuccessResult("Müşteri basariyla güncellendi.");}
+        return new ErrorResult("Müşteri güncellemesi başarısız.");
     }
 
     @Override
-    public Result deleteUser(Long userId) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isPresent()) {
-            userRepository.deleteById(userId);
-            return new SuccessResult("Kullanıcı başarıyla silindi.");
-        }
-        return new ErrorResult("Kullanıcı silinemedi.");
-    }
+    public Result deleteCustomer(Long userId) {
+        Optional<Customer> customer = this.customerRepository
+                .findById(userId);
 
+        if (customer.isPresent()) {
+            this.customerRepository.deleteById(userId);
+            return new SuccessResult("Müşteri başarıyla silindi.");
+        }
+        return new ErrorResult("Müşteri silinmesinde hata oluştu. Müşteri bulunamadı.");
+    }
 
     // PACKET ##########################################################################################################
 
     @Override
-    public Result addPacket(PacketDto packetDto) {
+    public Result addPacket(PacketDto packetDto, String adminFullName) {
         Packet packet = this.modelMapper.map(packetDto, Packet.class);
-        packet.setCreateAt(new Date());
-        packet.setCreateBy("Admin-Oguzcan");
+        packet.setCreateAt(ZonedDateTime.now());
+        packet.setCreateBy(adminFullName);
         this.packetRepository.save(packet);
         return new SuccessResult(packet.getTitle() + " adlı paket başarıyla oluşturuldu.");
     }
@@ -122,7 +146,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public Result updatePacket(Long packetId, PacketDto packetDto) {
+    public Result updatePacket(Long packetId, PacketDto packetDto, String adminFullName) {
         Optional<Packet> resultPaket = packetRepository.findById(packetId);
         if (resultPaket.isPresent()) {
             resultPaket.get().setTitle(packetDto.getTitle());
@@ -130,8 +154,8 @@ public class AdminServiceImpl implements AdminService {
             resultPaket.get().setData(packetDto.getData());
             resultPaket.get().setMinutes(packetDto.getMinutes());
             resultPaket.get().setSms(packetDto.getSms());
-            resultPaket.get().setUpdateAt(new Date());
-            resultPaket.get().setUpdateBy("Admin-Oguzcan");
+            resultPaket.get().setUpdateAt(ZonedDateTime.now());
+            resultPaket.get().setUpdateBy(adminFullName);
             this.packetRepository.save(resultPaket.get());
             return new SuccessResult("Paket güncelleme başarılı.");
         }
